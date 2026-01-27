@@ -12,6 +12,8 @@ struct ContentView: View {
     @StateObject var storage = RecordingStorage()
     @State private var showPlayback = false
     @State private var selectedRecording: Recording?
+    @State private var recordingToDelete: Recording?
+    @State private var showDeleteAlert = false
     
     var body: some View {
         NavigationStack {
@@ -39,11 +41,6 @@ struct ContentView: View {
                     VStack(spacing: 0) {
                         // Main Recording Section - takes full screen height
                         VStack(spacing: 20) {
-                            Text("Voice Recorder")
-                                .font(.title)
-                                .padding(.top, 40)
-                                .foregroundStyle(.red)
-                            
                             Spacer()
                             
                             Button(action: {
@@ -120,8 +117,12 @@ struct ContentView: View {
                                             .padding()
                                             .frame(maxWidth: .infinity)
                                             .aspectRatio(1, contentMode: .fit)
-                                            .background(Color.white.opacity(0.1))
+                                            .background(.ultraThinMaterial)
                                             .cornerRadius(12)
+                                        }
+                                        .onLongPressGesture {
+                                            recordingToDelete = recording
+                                            showDeleteAlert = true
                                         }
                                     }
                                 }
@@ -134,6 +135,14 @@ struct ContentView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .top) {
+                    Text("Voice Recorder")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
                 
                 // Live Visualizer located at the very bottom
                 if voiceRecorder.isRecording {
@@ -173,8 +182,24 @@ struct ContentView: View {
                 voiceRecorder.requestPermission()
             }
         }
+        .alert("Delete Recording", isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                storage.deleteRecording(recording)
+            }
+        } message: { recording in
+            Text("Are you sure you want to delete \"\(getRecordingName(recording))\"?")
+        }
         .preferredColorScheme(.dark)
         .tint(.red)
+    }
+    
+    private func getRecordingName(_ recording: Recording) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        let fullName = formatter.string(from: recording.date)
+        return fullName.count > 20 ? String(fullName.prefix(20)) + "..." : fullName
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
