@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var voiceRecorder = VoiceRecorder()
+    @StateObject var storage = RecordingStorage()
     @State private var showPlayback = false
+    @State private var selectedRecording: Recording?
     
     var body: some View {
         NavigationStack {
@@ -32,36 +34,105 @@ struct ContentView: View {
                         .animation(.easeOut(duration: 0.1), value: voiceRecorder.currentAmplitude)
                 }
                 
-                VStack {
-                    Text("Voice Recorder")
-                        .font(.title)
-                        .padding()
-                        .foregroundStyle(.white)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        if voiceRecorder.isRecording {
-                            voiceRecorder.stopRecording()
-                            showPlayback = true
-                        } else {
-                            voiceRecorder.startRecording()
+                
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Main Recording Section - takes full screen height
+                        VStack(spacing: 20) {
+                            Text("Voice Recorder")
+                                .font(.title)
+                                .padding(.top, 40)
+                                .foregroundStyle(.red)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                if voiceRecorder.isRecording {
+                                    voiceRecorder.stopRecording()
+                                    
+                                    // Save recording
+                                    if let recording = voiceRecorder.getCurrentRecording() {
+                                        storage.saveRecording(recording)
+                                    }
+                                    
+                                    showPlayback = true
+                                } else {
+                                    voiceRecorder.startRecording()
+                                }
+                            }) {
+                                Image(systemName: voiceRecorder.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 100, height: 100)
+                                    .foregroundColor(.red)
+                            }
+                            
+                            Text(voiceRecorder.isRecording ? "Recording..." : "Tap to record")
+                                .font(.headline)
+                                .padding()
+                                .foregroundStyle(.gray)
+                            
+                            Spacer()
                         }
-                    }) {
-                        Image(systemName: voiceRecorder.isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
-                            .foregroundColor(.red)
+                        .frame(height: UIScreen.main.bounds.height - 100)
+                        
+                        // Past Recordings Section - Grid below
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Past Recordings")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal)
+                            
+                            if storage.recordings.isEmpty {
+                                Text("No recordings yet")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.gray)
+                                    .padding(.horizontal)
+                                    .padding(.bottom, 40)
+                            } else {
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 15),
+                                    GridItem(.flexible(), spacing: 15),
+                                    GridItem(.flexible(), spacing: 15)
+                                ], spacing: 15) {
+                                    ForEach(storage.recordings) { recording in
+                                        Button(action: {
+                                            selectedRecording = recording
+                                            voiceRecorder.loadRecording(filename: recording.filename)
+                                            showPlayback = true
+                                        }) {
+                                            VStack(spacing: 8) {
+                                                Image(systemName: "waveform")
+                                                    .font(.system(size: 30))
+                                                    .foregroundStyle(.red)
+                                                
+                                                Text(recording.date, style: .date)
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.white)
+                                                    .lineLimit(1)
+                                                
+                                                Text(formatDuration(recording.duration))
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.gray)
+                                            }
+                                            .padding()
+                                            .frame(maxWidth: .infinity)
+                                            .aspectRatio(1, contentMode: .fit)
+                                            .background(Color.white.opacity(0.1))
+                                            .cornerRadius(12)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                                .padding(.bottom, 40)
+                            }
+                        }
+                        .opacity(voiceRecorder.isRecording ? 0 : 1)
+                        .animation(.easeInOut(duration: 0.3), value: voiceRecorder.isRecording)
                     }
-                    Text(voiceRecorder.isRecording ? "Recording..." : "Tap to record")
-                        .font(.headline)
-                        .padding()
-                        .foregroundStyle(.gray)
-                    
-                    Spacer()
                 }
-                .padding()
+                .ignoresSafeArea(edges: .bottom)
                 
                 // Live Visualizer located at the very bottom
                 if voiceRecorder.isRecording {
@@ -103,6 +174,12 @@ struct ContentView: View {
         }
         .preferredColorScheme(.dark)
         .tint(.red)
+    }
+    
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }
 

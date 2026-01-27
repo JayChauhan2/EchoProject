@@ -15,6 +15,9 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
     
+    private var currentRecordingFilename: String?
+    private var recordingStartTime: Date?
+    
     override init() {
         super.init()
     }
@@ -34,7 +37,12 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         stopPlayback()
         audioPlayer = nil
         
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+        // Generate unique filename
+        let filename = "\(UUID().uuidString).m4a"
+        currentRecordingFilename = filename
+        recordingStartTime = Date()
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent(filename)
         
         let settings = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -79,6 +87,37 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         isRecording = false
         timer?.invalidate()
         timer = nil
+    }
+    
+    func getCurrentRecording() -> Recording? {
+        guard let filename = currentRecordingFilename,
+              let startTime = recordingStartTime else {
+            return nil
+        }
+        
+        let recordingDuration = Date().timeIntervalSince(startTime)
+        return Recording(filename: filename, date: startTime, duration: recordingDuration)
+    }
+    
+    func loadRecording(filename: String) {
+        stopPlayback()
+        audioPlayer = nil
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent(filename)
+        
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: audioFilename)
+            audioPlayer?.delegate = self
+            audioPlayer?.volume = 1.0
+            audioPlayer?.prepareToPlay()
+            duration = audioPlayer?.duration ?? 0
+            
+            // Load samples if available (won't be for old recordings)
+            // For now, just use empty samples for past recordings
+            audioSamples = []
+        } catch {
+            print("Failed to load recording: \(error)")
+        }
     }
     
     func startPlayback() {
