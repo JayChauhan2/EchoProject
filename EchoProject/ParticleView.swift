@@ -17,10 +17,15 @@ struct ParticleView: View {
         TimelineView(.animation) { timeline in
             Canvas { context, size in
                 for particle in particles {
-                    let rect = CGRect(x: particle.x, y: particle.y, width: particle.size, height: particle.size)
-                    context.fill(
-                        Path(ellipseIn: rect),
-                        with: .color(.red.opacity(particle.opacity))
+                    // Draw microphone icon instead of circle
+                    let icon = Image(systemName: "mic.fill")
+                    let resolvedIcon = context.resolve(icon)
+                    
+                    context.opacity = particle.opacity
+                    context.draw(
+                        resolvedIcon,
+                        at: CGPoint(x: particle.x + particle.size / 2, y: particle.y + particle.size / 2),
+                        anchor: .center
                     )
                 }
             }
@@ -42,7 +47,7 @@ struct ParticleView: View {
                 x: CGFloat.random(in: 0...screenWidth),
                 y: CGFloat.random(in: 0...screenHeight),
                 size: CGFloat.random(in: 6...12),
-                opacity: Double.random(in: 0.4...0.7),
+                opacity: Double.random(in: 0.1...0.25),
                 velocityX: CGFloat.random(in: -0.5...0.5),
                 velocityY: CGFloat.random(in: -0.8...(-0.2))
             )

@@ -74,7 +74,7 @@ struct ContentView: View {
                             
                             Spacer()
                         }
-                        .frame(height: UIScreen.main.bounds.height - 100)
+                        .frame(height: UIScreen.main.bounds.height - 150)
                         
                         // Past Recordings Section - Grid below
                         VStack(alignment: .leading, spacing: 15) {
@@ -83,6 +83,7 @@ struct ContentView: View {
                                 .fontWeight(.bold)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             
                             if storage.recordings.isEmpty {
                                 Text("No recordings yet")
@@ -99,7 +100,7 @@ struct ContentView: View {
                                     ForEach(storage.recordings) { recording in
                                         Button(action: {
                                             selectedRecording = recording
-                                            voiceRecorder.loadRecording(filename: recording.filename)
+                                            voiceRecorder.loadRecording(recording)
                                             showPlayback = true
                                         }) {
                                             VStack(spacing: 8) {
@@ -125,14 +126,14 @@ struct ContentView: View {
                                     }
                                 }
                                 .padding(.horizontal)
-                                .padding(.bottom, 40)
+                                .padding(.bottom, 100)
                             }
                         }
                         .opacity(voiceRecorder.isRecording ? 0 : 1)
                         .animation(.easeInOut(duration: 0.3), value: voiceRecorder.isRecording)
                     }
                 }
-                .ignoresSafeArea(edges: .bottom)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 // Live Visualizer located at the very bottom
                 if voiceRecorder.isRecording {

@@ -96,14 +96,15 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         }
         
         let recordingDuration = Date().timeIntervalSince(startTime)
-        return Recording(filename: filename, date: startTime, duration: recordingDuration)
+        return Recording(filename: filename, date: startTime, duration: recordingDuration, samples: audioSamples)
     }
     
-    func loadRecording(filename: String) {
+    func loadRecording(_ recording: Recording) {
         stopPlayback()
         audioPlayer = nil
+        currentRecordingFilename = recording.filename
         
-        let audioFilename = getDocumentsDirectory().appendingPathComponent(filename)
+        let audioFilename = getDocumentsDirectory().appendingPathComponent(recording.filename)
         
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: audioFilename)
@@ -112,16 +113,20 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0
             
-            // Load samples if available (won't be for old recordings)
-            // For now, just use empty samples for past recordings
-            audioSamples = []
+            // Restore samples from recording
+            audioSamples = recording.samples
         } catch {
             print("Failed to load recording: \(error)")
         }
     }
     
     func startPlayback() {
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+        guard let filename = currentRecordingFilename else {
+            print("No recording filename available")
+            return
+        }
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent(filename)
         
         do {
             if audioPlayer == nil {
