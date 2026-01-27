@@ -176,7 +176,9 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(isPresented: $showPlayback) {
-                PlaybackView(voiceRecorder: voiceRecorder)
+                if let recording = selectedRecording {
+                    PlaybackView(voiceRecorder: voiceRecorder, storage: storage, recording: recording)
+                }
             }
             .onAppear {
                 voiceRecorder.requestPermission()
@@ -184,14 +186,15 @@ struct ContentView: View {
         }
         .alert("Delete Recording", isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
             Button("Cancel", role: .cancel) { }
+                .tint(.white)
             Button("Delete", role: .destructive) {
                 storage.deleteRecording(recording)
             }
+            .tint(.red)
         } message: { recording in
             Text("Are you sure you want to delete \"\(getRecordingName(recording))\"?")
         }
         .preferredColorScheme(.dark)
-        .tint(.red)
     }
     
     private func getRecordingName(_ recording: Recording) -> String {

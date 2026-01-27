@@ -3,7 +3,11 @@ import AVFoundation
 
 struct PlaybackView: View {
     @ObservedObject var voiceRecorder: VoiceRecorder
+    @ObservedObject var storage: RecordingStorage
+    let recording: Recording
     
+    @Environment(\.dismiss) var dismiss
+    @State private var showDeleteAlert = false
     @State private var isDragging = false
     @State private var scrubbingTime: TimeInterval = 0
     
@@ -160,6 +164,27 @@ struct PlaybackView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showDeleteAlert = true
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .alert("Delete Recording", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+                .tint(.white)
+            Button("Delete", role: .destructive) {
+                storage.deleteRecording(recording)
+                dismiss()
+            }
+            .tint(.red)
+        } message: {
+            Text("Are you sure you want to delete \"\(getRecordingName())\"?")
+        }
         .onAppear {
             voiceRecorder.startPlayback()
         }
@@ -167,10 +192,21 @@ struct PlaybackView: View {
             voiceRecorder.stopPlayback()
         }
     }
+    
+    private func getRecordingName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        let fullName = formatter.string(from: recording.date)
+        return fullName.count > 20 ? String(fullName.prefix(20)) + "..." : fullName
+    }
 }
 
 #Preview {
     let mockRecorder = VoiceRecorder()
+    let mockStorage = RecordingStorage()
+    let mockRecording = Recording(filename: "test.m4a", date: Date(), duration: 10.0, samples: [0.1, 0.3, 0.5, 0.8, 0.4, 0.2, 0.6, 0.9, 0.3])
     mockRecorder.audioSamples = [0.1, 0.3, 0.5, 0.8, 0.4, 0.2, 0.6, 0.9, 0.3]
-    return PlaybackView(voiceRecorder: mockRecorder)
+    
+    return PlaybackView(voiceRecorder: mockRecorder, storage: mockStorage, recording: mockRecording)
 }
