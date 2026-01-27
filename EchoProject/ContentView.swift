@@ -17,6 +17,10 @@ struct ContentView: View {
                 // Background & Glow
                 Color.black.ignoresSafeArea()
                 
+                // Floating particles
+                ParticleView()
+                    .ignoresSafeArea()
+                
                 if voiceRecorder.isRecording {
                     Circle()
                         .fill(
