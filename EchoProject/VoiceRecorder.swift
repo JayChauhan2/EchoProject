@@ -11,6 +11,7 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
     @Published var isRecording = false
     @Published var isPlaying = false
     @Published var audioSamples: [Float] = []
+    @Published var currentAmplitude: Float = 0.0
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
     
@@ -30,6 +31,9 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
     }
     
     func startRecording() {
+        stopPlayback()
+        audioPlayer = nil
+        
         let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
         
         let settings = [
@@ -52,7 +56,7 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
             isRecording = true
             audioSamples = []
             
-            timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
                 self.audioRecorder?.updateMeters()
                 // Normalize power (typically -160 to 0) to 0...1 range roughly
                 let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
@@ -60,6 +64,8 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
                 // Use a tighter range for better visuals, e.g. -60 to 0
                 let minDb: Float = -60.0
                 let normalized = max(0.0, (power - minDb) / -minDb) + 0.01 // ensure non-zero
+                
+                self.currentAmplitude = normalized
                 self.audioSamples.append(normalized)
             }
             

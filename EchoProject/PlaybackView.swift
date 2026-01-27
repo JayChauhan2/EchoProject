@@ -46,13 +46,56 @@ struct PlaybackView: View {
                     let currentX = percent * totalWidth
                     let centerOffset = geometry.size.width / 2
                     
-                    HStack(spacing: spacing) {
-                        ForEach(voiceRecorder.audioSamples.indices, id: \.self) { index in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color.red)
-                                // Boost amplitude to fill height: * 400. Clamp to max 250.
-                                .frame(width: barWidth, height: min(250, max(4, CGFloat(voiceRecorder.audioSamples[index]) * 400)))
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Waveform
+                        HStack(spacing: spacing) {
+                            ForEach(voiceRecorder.audioSamples.indices, id: \.self) { index in
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(Color.red)
+                                    // Boost amplitude to fill height: * 400. Clamp to max 250.
+                                    .frame(width: barWidth, height: min(250, max(4, CGFloat(voiceRecorder.audioSamples[index]) * 400)))
+                            }
                         }
+                        .frame(height: 250, alignment: .bottom) // Align bottom to sit on ruler
+                        
+                        // Ruler
+                        ZStack(alignment: .topLeading) {
+                            // Ruler Line
+                            Rectangle()
+                                .fill(Color.gray)
+                                .frame(height: 1)
+                                .frame(width: totalWidth)
+                            
+                            // Ticks and Labels
+                            // 1 second = 20 samples * 10 width = 200 points
+                            // Create range of seconds covering the duration
+                            let secondsCount = Int(totalWidth / 200) + 1
+                            
+                            ForEach(0..<secondsCount, id: \.self) { second in
+                                let xPos = CGFloat(second) * 200.0
+                                
+                                // Major Tick
+                                Rectangle()
+                                    .fill(Color.gray)
+                                    .frame(width: 2, height: 10)
+                                    .offset(x: xPos)
+                                
+                                // Label
+                                Text(String(format: "0:%02d", second))
+                                    .font(.caption2)
+                                    .foregroundStyle(.gray)
+                                    .offset(x: xPos + 4, y: 12)
+                                
+                                // Minor Ticks (every 0.2s = 4 bars = 40pt)
+                                ForEach(1..<5) { tick in
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.5))
+                                        .frame(width: 1, height: 5)
+                                        .offset(x: xPos + CGFloat(tick) * 40.0)
+                                }
+                            }
+                        }
+                        .frame(width: totalWidth, height: 30, alignment: .topLeading)
                     }
                     .frame(width: totalWidth, alignment: .leading)
                     .offset(x: centerOffset - currentX)
@@ -68,17 +111,16 @@ struct PlaybackView: View {
                                 
                                 // Calculate scrub based on drag translation
                                 // translation / totalBarWidth gives number of bars dragged
-                                // each bar is 0.1s
-                                // We need to relate pixel movement to time duration
-                                // Pixels per second = (10 samples/sec) * totalBarWidth
-                                let pixelsPerSecond = 10.0 * totalBarWidth
+                                // each bar is 0.05s (20Hz)
+                                // Pixels per second = 20 * 10 = 200
+                                let pixelsPerSecond = 20.0 * totalBarWidth
                                 let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                 
                                 scrubbingTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
                             }
                             .onEnded { value in
                                 let totalBarWidth = barWidth + spacing
-                                let pixelsPerSecond = 10.0 * totalBarWidth
+                                let pixelsPerSecond = 20.0 * totalBarWidth
                                 let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                 let newTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
                                 
@@ -93,9 +135,10 @@ struct PlaybackView: View {
                 // Static Playhead
                 Rectangle()
                     .fill(Color.white)
-                    .frame(width: 2, height: 250)
+                    .frame(width: 2, height: 280) // Taller to cover ruler too
+                    .offset(y: -15) // Adjust alignment
             }
-            .frame(height: 250)
+            .frame(height: 280) // Adjusted total height
             .background(Color.black.opacity(0.3))
             
             Spacer()
@@ -119,6 +162,9 @@ struct PlaybackView: View {
         .background(Color.black)
         .onAppear {
             voiceRecorder.startPlayback()
+        }
+        .onDisappear {
+            voiceRecorder.stopPlayback()
         }
     }
 }
