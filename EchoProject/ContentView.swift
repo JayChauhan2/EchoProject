@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject var voiceRecorder = VoiceRecorder()
     @StateObject var storage = RecordingStorage()
     @State private var showPlayback = false
+    @State private var isAnalyzing = false
     @State private var selectedRecording: Recording?
     @State private var recordingToDelete: Recording?
     @State private var showDeleteAlert = false
@@ -46,13 +47,23 @@ struct ContentView: View {
                             Button(action: {
                                 if voiceRecorder.isRecording {
                                     voiceRecorder.stopRecording()
+                                    withAnimation { isAnalyzing = true }
                                     
                                     Task { @MainActor in
                                         // Save recording
                                         if let recording = await voiceRecorder.getCurrentRecording() {
                                             storage.saveRecording(recording)
                                             selectedRecording = recording
-                                            showPlayback = true
+                                            
+                                            // Artificial delay if analysis is too fast (optional, but good for UX)
+                                            try? await Task.sleep(nanoseconds: 2 * 1_000_000_000)
+                                            
+                                            withAnimation {
+                                                isAnalyzing = false
+                                                showPlayback = true
+                                            }
+                                        } else {
+                                            withAnimation { isAnalyzing = false }
                                         }
                                     }
                                 } else {
@@ -176,6 +187,27 @@ struct ContentView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .ignoresSafeArea(edges: .bottom)
                 }
+                
+                // Analysis Loading Screen
+                if isAnalyzing {
+                    ZStack {
+                        Color.black.ignoresSafeArea()
+                        ParticleView().ignoresSafeArea().opacity(0.5)
+                        
+                        VStack(spacing: 30) {
+                            AnalysisLoadingView()
+                                .frame(width: 200, height: 200)
+                            
+                            Text("Analyzing Audio...")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.white)
+                                .opacity(0.8)
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(2)
+                }
             }
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
@@ -215,5 +247,50 @@ struct ContentView: View {
 }
 
 #Preview {
+    // Preview with analysis state true to see animation
     ContentView()
+}
+
+struct AnalysisLoadingView: View {
+    @State private var isAnimating = false
+    
+    var body: some View {
+        ZStack {
+            // Central Core
+            Circle()
+                .fill(Color.red)
+                .frame(width: 60, height: 60)
+                .blur(radius: isAnimating ? 20 : 10)
+                .scaleEffect(isAnimating ? 1.2 : 0.8)
+            
+            Circle()
+                .fill(Color.white)
+                .frame(width: 30, height: 30)
+                .scaleEffect(isAnimating ? 1.0 : 0.5)
+                .blur(radius: 5)
+                .opacity(0.8)
+            
+            // Orbiting Rings
+            ForEach(0..<3) { i in
+                Circle()
+                    .trim(from: 0, to: 0.7)
+                    .stroke(
+                        AngularGradient(gradient: Gradient(colors: [.red.opacity(0), .red]), center: .center),
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .frame(width: CGFloat(100 + i * 40), height: CGFloat(100 + i * 40))
+                    .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
+                    .animation(
+                        Animation.linear(duration: Double(3 - i) + 1.0)
+                            .repeatForever(autoreverses: false),
+                        value: isAnimating
+                    )
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
+    }
 }
