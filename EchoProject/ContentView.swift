@@ -252,45 +252,40 @@ struct ContentView: View {
 }
 
 struct AnalysisLoadingView: View {
-    @State private var isAnimating = false
+    @State private var phase: CGFloat = 0
     
     var body: some View {
         ZStack {
-            // Central Core
-            Circle()
-                .fill(Color.red)
-                .frame(width: 60, height: 60)
-                .blur(radius: isAnimating ? 20 : 10)
-                .scaleEffect(isAnimating ? 1.2 : 0.8)
-            
-            Circle()
-                .fill(Color.white)
-                .frame(width: 30, height: 30)
-                .scaleEffect(isAnimating ? 1.0 : 0.5)
-                .blur(radius: 5)
-                .opacity(0.8)
-            
-            // Orbiting Rings
-            ForEach(0..<3) { i in
-                Circle()
-                    .trim(from: 0, to: 0.7)
-                    .stroke(
-                        AngularGradient(gradient: Gradient(colors: [.red.opacity(0), .red]), center: .center),
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                    )
-                    .frame(width: CGFloat(100 + i * 40), height: CGFloat(100 + i * 40))
-                    .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                    .animation(
-                        Animation.linear(duration: Double(3 - i) + 1.0)
-                            .repeatForever(autoreverses: false),
-                        value: isAnimating
-                    )
+            // Multiple rings expanding out to imitate "infinity"
+            ForEach(0..<6) { i in
+                loadingRing(index: i)
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                isAnimating = true
+            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                phase = 3.0 // Move outward significantly
             }
         }
+    }
+    
+    private func loadingRing(index: Int) -> some View {
+        let i = CGFloat(index)
+        let scale = 1.0 + i + phase
+        let opacity = 1.0 - (phase / 3.0)
+        let rotation = Double(i) * 30.0 + Double(phase) * 10.0
+        
+        return Circle()
+            .stroke(lineWidth: 4)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [.red.opacity(0), .red, .red.opacity(0)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(width: 50, height: 50)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            .rotationEffect(.degrees(rotation))
     }
 }

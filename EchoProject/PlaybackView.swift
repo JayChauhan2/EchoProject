@@ -171,7 +171,7 @@ struct PlaybackView: View {
                     
                     HStack(spacing: 20) {
                         VStack {
-                            Text("State")
+                            Text("Your State")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
                             Text(analysis.communicationState.rawValue)
