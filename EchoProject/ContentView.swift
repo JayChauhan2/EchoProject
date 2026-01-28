@@ -47,13 +47,14 @@ struct ContentView: View {
                                 if voiceRecorder.isRecording {
                                     voiceRecorder.stopRecording()
                                     
-                                    // Save recording
-                                    if let recording = voiceRecorder.getCurrentRecording() {
-                                        storage.saveRecording(recording)
-                                        selectedRecording = recording
+                                    Task { @MainActor in
+                                        // Save recording
+                                        if let recording = await voiceRecorder.getCurrentRecording() {
+                                            storage.saveRecording(recording)
+                                            selectedRecording = recording
+                                            showPlayback = true
+                                        }
                                     }
-                                    
-                                    showPlayback = true
                                 } else {
                                     voiceRecorder.startRecording()
                                 }

@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import Speech
 
 class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     
@@ -24,7 +25,11 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
     
     func requestPermission() {
         AVAudioSession.sharedInstance().requestRecordPermission { allowed in
-            print("Permission allowed: \(allowed)")
+            print("Microphone permission allowed: \(allowed)")
+        }
+        
+        SFSpeechRecognizer.requestAuthorization { status in
+            print("Speech recognition status: \(status.rawValue)")
         }
     }
     
@@ -82,6 +87,8 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         }
     }
     
+    private let analyzer = AudioAnalyzer()
+    
     func stopRecording() {
         audioRecorder?.stop()
         isRecording = false
@@ -89,14 +96,26 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         timer = nil
     }
     
-    func getCurrentRecording() -> Recording? {
+    func getCurrentRecording() async -> Recording? {
         guard let filename = currentRecordingFilename,
               let startTime = recordingStartTime else {
             return nil
         }
         
         let recordingDuration = Date().timeIntervalSince(startTime)
-        return Recording(filename: filename, date: startTime, duration: recordingDuration, samples: audioSamples)
+        var recording = Recording(filename: filename, date: startTime, duration: recordingDuration, samples: audioSamples)
+        
+        // Perform Analysis
+        let url = getDocumentsDirectory().appendingPathComponent(filename)
+        do {
+            let result = try await analyzer.analyze(url: url)
+            recording.analysis = result
+        } catch {
+            print("Analysis failed: \(error)")
+            recording.analysisError = error.localizedDescription
+        }
+        
+        return recording
     }
     
     func loadRecording(_ recording: Recording) {

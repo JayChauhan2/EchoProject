@@ -161,6 +161,82 @@ struct PlaybackView: View {
                     .foregroundStyle(.red)
             }
             .padding()
+            
+            // Audio Analysis Results
+            if let analysis = recording.analysis {
+                VStack(spacing: 15) {
+                    Text("Analysis Results")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    
+                    HStack(spacing: 20) {
+                        VStack {
+                            Text("State")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                            Text(analysis.communicationState.rawValue)
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundStyle(getColor(for: analysis.communicationState))
+                        }
+                        
+                        VStack {
+                            Text("Rate")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                            Text(String(format: "%.0f WPM", analysis.speechRate))
+                                .fontWeight(.medium)
+                                .foregroundStyle(.white)
+                        }
+                        
+                        VStack {
+                            Text("Pauses")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                            Text(String(format: "%.1f /min", analysis.pauseFrequency))
+                                .fontWeight(.medium)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(10)
+                    
+                    if !analysis.transcription.isEmpty {
+                        ScrollView {
+                            Text(analysis.transcription)
+                                .font(.body)
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding()
+                        }
+                        .frame(maxHeight: 150)
+                        .background(Color.black.opacity(0.2))
+                        .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal)
+            } else if let error = recording.analysisError {
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.title)
+                        .foregroundStyle(.yellow)
+                    
+                    Text("Analysis Unavailable")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(10)
+                .padding(.horizontal)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
@@ -190,6 +266,15 @@ struct PlaybackView: View {
         }
         .onDisappear {
             voiceRecorder.stopPlayback()
+        }
+    }
+    
+    private func getColor(for state: CommunicationState) -> Color {
+        switch state {
+        case .confident: return .green
+        case .neutral: return .blue
+        case .hesitant: return .orange
+        case .unclear: return .red
         }
     }
     

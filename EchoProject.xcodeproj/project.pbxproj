@@ -10,9 +10,22 @@
 		843690B02F2939A6000BC58A /* EchoProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EchoProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		843690E12F29A954000BC58A /* Exceptions for "EchoProject" folder in "EchoProject" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 843690AF2F2939A6000BC58A /* EchoProject */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		843690B22F2939A6000BC58A /* EchoProject */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				843690E12F29A954000BC58A /* Exceptions for "EchoProject" folder in "EchoProject" target */,
+			);
 			path = EchoProject;
 			sourceTree = "<group>";
 		};
@@ -253,7 +266,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EchoProject/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to the microphone to record your voice notes.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to transcribe audio";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -285,7 +300,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EchoProject/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to the microphone to record your voice notes.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to transcribe audio";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
