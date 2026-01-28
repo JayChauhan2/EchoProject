@@ -8,6 +8,7 @@ struct Particle: Identifiable {
     var opacity: Double
     var velocityX: CGFloat
     var velocityY: CGFloat
+    var isLightRed: Bool
 }
 
 struct ParticleView: View {
@@ -16,10 +17,11 @@ struct ParticleView: View {
     var body: some View {
         TimelineView(.animation) { timeline in
             Canvas { context, size in
+                let redIcon = context.resolveSymbol(id: 0)!
+                let lightRedIcon = context.resolveSymbol(id: 1)!
+                
                 for particle in particles {
-                    // Draw microphone icon instead of circle
-                    let icon = Image(systemName: "mic.fill")
-                    let resolvedIcon = context.resolve(icon)
+                    let resolvedIcon = particle.isLightRed ? lightRedIcon : redIcon
                     
                     context.opacity = particle.opacity
                     context.draw(
@@ -28,6 +30,14 @@ struct ParticleView: View {
                         anchor: .center
                     )
                 }
+            } symbols: {
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(.red)
+                    .tag(0)
+                
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(Color(red: 1.0, green: 0.4, blue: 0.4))
+                    .tag(1)
             }
             .onAppear {
                 initializeParticles()
@@ -49,7 +59,8 @@ struct ParticleView: View {
                 size: CGFloat.random(in: 6...12),
                 opacity: Double.random(in: 0.1...0.25),
                 velocityX: CGFloat.random(in: -0.5...0.5),
-                velocityY: CGFloat.random(in: -0.8...(-0.2))
+                velocityY: CGFloat.random(in: -0.8...(-0.2)),
+                isLightRed: Bool.random()
             )
         }
     }
