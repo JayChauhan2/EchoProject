@@ -50,6 +50,7 @@ struct ContentView: View {
                                     // Save recording
                                     if let recording = voiceRecorder.getCurrentRecording() {
                                         storage.saveRecording(recording)
+                                        selectedRecording = recording
                                     }
                                     
                                     showPlayback = true
@@ -136,7 +137,7 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .safeAreaInset(edge: .top) {
-                    Text("Voice Recorder")
+                    Text("Echo 🎤")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundStyle(.red)
